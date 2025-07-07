@@ -198,9 +198,10 @@ export class WxArticleFetcher {
 
         // 处理图片
         const imgPromises = $('img').map(async (_, elem) => {
-            const src = $(elem).attr('data-src');
+            let src = $(elem).attr('data-src');
             if (!src) return;
-
+            // 从640宽度图替换为原图
+            src = src.replace('/640?', '/0?')
             try {
                 const imgResponse = await this.fetchWithRetry(src, 3, 2000, false);
                 console.log("src => ", src)
