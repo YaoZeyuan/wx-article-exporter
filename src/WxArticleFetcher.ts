@@ -2,6 +2,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import * as fs from 'fs';
 import * as path from 'path';
+import md5 from 'md5'
 
 interface WxAlbumInfo {
     title: string;
@@ -26,6 +27,10 @@ interface FetchProgress {
         url: string;
         error: string;
     }>;
+}
+
+const getImgageName = (src: string) => {
+    return md5(src)
 }
 
 export class WxArticleFetcher {
@@ -187,9 +192,9 @@ export class WxArticleFetcher {
     private async fetchArticleContent(article: WxArticleInfo, articleDir: string): Promise<void> {
         const response = await this.fetchWithRetry(article.url);
         const $ = cheerio.load(response.data);
-
+        const imgDir = path.join(articleDir, 'images')
         // 创建文章目录
-        fs.mkdirSync(path.join(articleDir, 'images'), { recursive: true });
+        fs.mkdirSync(imgDir, { recursive: true });
 
         // 处理图片
         const imgPromises = $('img').map(async (_, elem) => {
@@ -201,7 +206,7 @@ export class WxArticleFetcher {
                 console.log("src => ", src)
                 const imgData = Buffer.from(imgResponse.data);
 
-                const imgName = `img_${Date.now()}${this.getImageExtension(src)}`;
+                const imgName = `img_${getImgageName(src)}${this.getImageExtension(src)}`;
                 console.log("imgName => ", imgName)
                 const imgPath = path.join(articleDir, 'images', imgName);
                 fs.writeFileSync(imgPath, imgData);
@@ -222,7 +227,8 @@ export class WxArticleFetcher {
 
         // 清理不需要的元素和属性
         $('script').remove();
-        $('*').removeAttr('class').removeAttr('style').removeAttr('id');
+        $('link').remove();
+        $('*').removeAttr('style').removeAttr('id');
 
         // 保存HTML文件
         fs.writeFileSync(path.join(articleDir, 'index.html'), $.html());
