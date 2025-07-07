@@ -54,7 +54,7 @@ async function main() {
 
         if (5 > 1) {
             console.log("第一步执行完毕")
-            return
+            // return
         }
 
         // 第二步：转换为EPUB

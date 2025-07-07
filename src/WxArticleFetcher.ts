@@ -155,17 +155,18 @@ export class WxArticleFetcher {
     /**
      * 带重试机制的HTTP请求
      */
-    private async fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<any> {
+    private async fetchWithRetry(url: string, retries = 3, delay = 1000, isText = true): Promise<any> {
         for (let i = 0; i < retries; i++) {
             try {
                 const response = await axios.get(url, {
                     headers: {
-                        'accept': ' text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                        'accept-language': ' zh-CN,zh;q=0.9,en;q=0.8',
-                        'cache-control': ' no-cache',
-                        'dnt': ' 1',
-                        'user-agent': ' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-                    }
+                        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                        'cache-control': 'no-cache',
+                        'dnt': '1',
+                        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+                    },
+                    // 如果URL以图片扩展名结尾，则设置responseType为arraybuffer
+                    responseType: isText ? undefined : 'arraybuffer'
                 });
                 return response;
             } catch (error) {
@@ -188,13 +189,16 @@ export class WxArticleFetcher {
 
         // 处理图片
         const imgPromises = $('img').map(async (_, elem) => {
-            const src = $(elem).attr('src') || $(elem).attr('data-src');
+            const src = $(elem).attr('data-src');
             if (!src) return;
 
             try {
-                const imgResponse = await this.fetchWithRetry(src, 3, 2000);
+                const imgResponse = await this.fetchWithRetry(src, 3, 2000, false);
+                console.log("src => ", src)
                 const imgData = Buffer.from(imgResponse.data);
+
                 const imgName = `img_${Date.now()}${this.getImageExtension(src)}`;
+                console.log("imgName => ", imgName)
                 const imgPath = path.join(articleDir, 'images', imgName);
                 fs.writeFileSync(imgPath, imgData);
                 $(elem).attr('src', `images/${imgName}`);
@@ -222,7 +226,7 @@ export class WxArticleFetcher {
      * 获取图片扩展名
      */
     private getImageExtension(url: string): string {
-        const match = url.match(/\.(jpg|jpeg|png|gif)($|\?)/);
+        const match = url.match(/(jpg|jpeg|png|gif)/);
         return match ? `.${match[1]}` : '.jpg';
     }
 
