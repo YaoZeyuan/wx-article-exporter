@@ -69,16 +69,13 @@ export class WxArticleExporter {
         // 提取cgiData对象，匹配到window.isPaySubscribe之前
 
         let rawContent = scriptContent.split("window.cgiData = ")[1]
-
-
-        const match = scriptContent.match(/window\.cgiData\s*=\s*({[\s\S]*?(?:continue_flag:[^,}]+,[\s\S]*?recomm_tag_page_url:[^,}]+)\s*});\s*window\.isPaySubscribe/);
-        if (!match) {
-            throw new Error('无法解析专辑信息');
-        }
-
+        rawContent = rawContent.split('isPaySubscribe')[0]
+        rawContent = rawContent.split('};')[0] + '}'
+        console.log("rawContent => \n", rawContent)
         // 清理多余的空白字符和注释
-        const cgiDataStr = match[1].replace(/\s+/g, ' ').trim();
-        const cgiData = JSON.parse(cgiDataStr);
+        const cgiData = Function('"use strict";return (' + rawContent +
+            ')'
+        )();
         return {
             title: cgiData.title,
             author: cgiData.nick_name,
