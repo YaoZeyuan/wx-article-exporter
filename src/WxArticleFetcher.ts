@@ -14,6 +14,7 @@ interface WxAlbumInfo {
 interface WxArticleInfo {
     title: string;
     url: string;
+    pos_num: number;
     createTime: number;
 }
 
@@ -115,6 +116,7 @@ export class WxArticleFetcher {
                 articles.push({
                     title: title,
                     url: article.url,
+                    pos_num: Number.parseInt(article.pos_num),
                     createTime: parseInt(article.create_time)
                 });
             }
@@ -126,6 +128,8 @@ export class WxArticleFetcher {
                 beginItemIdx = lastArticle.itemidx;
             }
         }
+        // 排序, 按从小到大顺序整理微信文章
+        articles.sort((a, b) => a.pos_num - b.pos_num)
 
         return articles;
     }
@@ -201,6 +205,8 @@ export class WxArticleFetcher {
                 console.log("imgName => ", imgName)
                 const imgPath = path.join(articleDir, 'images', imgName);
                 fs.writeFileSync(imgPath, imgData);
+                // 使用<div class="duokan-image-single"></div> 包裹该元素,方便在多看上读取
+                $(elem).wrap('<div class="duokan-image-single"></div>');
                 $(elem).attr('src', `images/${imgName}`);
             } catch (error) {
                 console.warn(`下载图片失败: ${src}`, error);
@@ -227,7 +233,7 @@ export class WxArticleFetcher {
      */
     private getImageExtension(url: string): string {
         const match = url.match(/(jpg|jpeg|png|gif)/);
-        return match ? `.${match[1]}` : '.jpg';
+        return match ? `.${match[1]}` : '.png';
     }
 
     /**
@@ -269,7 +275,7 @@ export class WxArticleFetcher {
         for (let i = 0; i < this.articles.length; i++) {
             const article = this.articles[i];
             console.log(`下载文章 ${i + 1}/${this.articles.length}: ${article.title}`);
-            await asyncSleep(3)
+            // await asyncSleep(3)
             try {
                 const articleDir = path.join(albumDir, `${i + 1}_${article.title}`);
                 await this.fetchArticleContent(article, articleDir);

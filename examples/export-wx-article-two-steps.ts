@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as fs from 'fs';
 import { WxArticleFetcher } from '../src/WxArticleFetcher';
 import { WxArticleConverter } from '../src/WxArticleConverter';
 
@@ -60,7 +61,11 @@ async function main() {
         // 第二步：转换为EPUB
         console.log('\n=== 第二步：转换为EPUB ===');
         const converter = new WxArticleConverter(albumDir);
-        const outputPath = path.join(__dirname, 'output', 'wx-article.epub');
+        // 读取albumInfo配置
+        const albumInfo = JSON.parse(fs.readFileSync(path.join(albumDir, 'album.json'), 'utf-8'));
+        // 移除所有不能出现在文件名和路径中的非法字符
+        const bookTitle = `${albumInfo.title}-${albumInfo.author}`.replace(/[\\/:*?"<>|]/g, '');
+        const outputPath = path.join(__dirname, 'output', `${bookTitle}.epub`);
 
         // 创建转换进度报告定时器
         const convertProgressTimer = setInterval(() => {
