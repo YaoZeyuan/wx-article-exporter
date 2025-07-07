@@ -7,7 +7,20 @@ describe('EpubGenerator', () => {
   const testImagePath = path.join(__dirname, 'test-assets', 'test-image.jpg');
   let generator: EpubGenerator;
 
-  beforeAll(() => {
+  beforeAll(async () => {
+    // 清理可能存在的旧测试文件
+    try {
+      if (fs.existsSync(testOutputDir)) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        fs.rmSync(testOutputDir, { recursive: true, force: true });
+      }
+      if (fs.existsSync(path.dirname(testImagePath))) {
+        fs.rmSync(path.dirname(testImagePath), { recursive: true, force: true });
+      }
+    } catch (error) {
+      console.warn('清理旧测试文件时出现警告：', error);
+    }
+
     // 创建测试输出目录
     if (!fs.existsSync(testOutputDir)) {
       fs.mkdirSync(testOutputDir, { recursive: true });
@@ -37,6 +50,19 @@ describe('EpubGenerator', () => {
     fs.writeFileSync(testImagePath, minimalJPEG);
   });
 
+  afterEach(async () => {
+    // 清理每个测试生成的文件
+    try {
+      const files = fs.readdirSync(testOutputDir);
+      for (const file of files) {
+        const filePath = path.join(testOutputDir, file);
+        fs.unlinkSync(filePath);
+      }
+    } catch (error) {
+      console.warn('清理测试生成的文件时出现警告：', error);
+    }
+  });
+
   beforeEach(() => {
     generator = new EpubGenerator({
       title: '测试电子书',
@@ -48,13 +74,20 @@ describe('EpubGenerator', () => {
     });
   });
 
-  afterAll(() => {
+  afterAll(async () => {
+    // 等待一小段时间确保所有文件句柄都被释放
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     // 清理测试文件
-    if (fs.existsSync(testOutputDir)) {
-      fs.rmSync(testOutputDir, { recursive: true, force: true });
-    }
-    if (fs.existsSync(path.dirname(testImagePath))) {
-      fs.rmSync(path.dirname(testImagePath), { recursive: true, force: true });
+    try {
+      if (fs.existsSync(testOutputDir)) {
+        fs.rmSync(testOutputDir, { recursive: true, force: true });
+      }
+      if (fs.existsSync(path.dirname(testImagePath))) {
+        fs.rmSync(path.dirname(testImagePath), { recursive: true, force: true });
+      }
+    } catch (error) {
+      console.warn('清理测试文件时出现警告：', error);
     }
   });
 

@@ -3,6 +3,8 @@
 /node_modules
 /build
 /tmp
+__tests__/**
+coverage/**
 
 # Logs
 logs
