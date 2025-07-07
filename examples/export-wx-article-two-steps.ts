@@ -31,29 +31,30 @@ async function main() {
         }, 1000);
 
         // 执行下载
-        const albumDir = path.resolve('D:/win_www/wx-article-exporter/resource/draft/揭秘公司治理框架')//await fetcher.fetchAll();
+        const albumDir = await fetcher.fetchAll();
+        // path.resolve('D:/win_www/wx-article-exporter/resource/draft/揭秘公司治理框架')
 
-        // // 清理下载进度定时器
-        // clearInterval(fetchProgressTimer);
+        // 清理下载进度定时器
+        clearInterval(fetchProgressTimer);
 
-        // // 输出下载统计
-        // const finalFetchProgress = fetcher.getProgress();
-        // console.log('\n下载完成!');
-        // console.log(`总文章数: ${finalFetchProgress.total}`);
-        // console.log(`成功下载: ${finalFetchProgress.current}`);
-        // console.log(`失败数量: ${finalFetchProgress.errors.length}`);
+        // 输出下载统计
+        const finalFetchProgress = fetcher.getProgress();
+        console.log('\n下载完成!');
+        console.log(`总文章数: ${finalFetchProgress.total}`);
+        console.log(`成功下载: ${finalFetchProgress.current}`);
+        console.log(`失败数量: ${finalFetchProgress.errors.length}`);
 
-        // if (finalFetchProgress.errors.length > 0) {
-        //     console.log('\n下载错误详情:');
-        //     finalFetchProgress.errors.forEach((error, index) => {
-        //         console.log(`${index + 1}. ${error.type}: ${error.url}`);
-        //         console.log(`   错误: ${error.error}`);
-        //     });
-        // }
+        if (finalFetchProgress.errors.length > 0) {
+            console.log('\n下载错误详情:');
+            finalFetchProgress.errors.forEach((error, index) => {
+                console.log(`${index + 1}. ${error.type}: ${error.url}`);
+                console.log(`   错误: ${error.error}`);
+            });
+        }
 
         if (5 > 1) {
             console.log("第一步执行完毕")
-            // return
+            return
         }
 
         // 第二步：转换为EPUB

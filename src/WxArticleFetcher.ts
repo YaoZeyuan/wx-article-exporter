@@ -109,8 +109,11 @@ export class WxArticleFetcher {
 
             const articleList = data.getalbum_resp.article_list;
             for (const article of articleList) {
+                const rawTitle = article.title
+                // 移除所有不能作为文件名的字符
+                const title = rawTitle.replace(/[\\/:*?"<>|]/g, '')
                 articles.push({
-                    title: article.title,
+                    title: title,
                     url: article.url,
                     createTime: parseInt(article.create_time)
                 });
@@ -155,7 +158,15 @@ export class WxArticleFetcher {
     private async fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<any> {
         for (let i = 0; i < retries; i++) {
             try {
-                const response = await axios.get(url);
+                const response = await axios.get(url, {
+                    headers: {
+                        'accept': ' text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                        'accept-language': ' zh-CN,zh;q=0.9,en;q=0.8',
+                        'cache-control': ' no-cache',
+                        'dnt': ' 1',
+                        'user-agent': ' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+                    }
+                });
                 return response;
             } catch (error) {
                 if (i === retries - 1) throw error;
@@ -239,11 +250,22 @@ export class WxArticleFetcher {
             errors: []
         };
 
+
+        // 睡眠指定秒数
+        const asyncSleep = async (second: number) => {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve(true);
+                }, 1000 * second);
+            });
+        }
+
+
         // 下载每篇文章
         for (let i = 0; i < this.articles.length; i++) {
             const article = this.articles[i];
             console.log(`下载文章 ${i + 1}/${this.articles.length}: ${article.title}`);
-
+            await asyncSleep(3)
             try {
                 const articleDir = path.join(albumDir, `${i + 1}_${article.title}`);
                 await this.fetchArticleContent(article, articleDir);
