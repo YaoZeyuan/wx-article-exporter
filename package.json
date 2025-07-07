@@ -20,11 +20,13 @@
   "license": "MIT",
   "dependencies": {
     "archiver": "^5.3.1",
+    "axios": "^1.4.0",
     "cheerio": "^1.0.0-rc.12",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/archiver": "^5.3.2",
+    "@types/axios": "^0.14.0",
     "@types/cheerio": "^0.22.31",
     "@types/jest": "^29.5.3",
     "@types/node": "^20.4.5",
