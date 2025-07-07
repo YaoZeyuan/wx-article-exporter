@@ -6,9 +6,16 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "debug": "npx tsx ./examples/convert-article.ts"
   },
-  "keywords": ["epub", "epub3.3", "ebook", "html", "converter"],
+  "keywords": [
+    "epub",
+    "epub3.3",
+    "ebook",
+    "html",
+    "converter"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -17,13 +24,14 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.4.5",
     "@types/archiver": "^5.3.2",
     "@types/cheerio": "^0.22.31",
-    "@types/uuid": "^9.0.2",
-    "typescript": "^5.1.6",
-    "jest": "^29.6.2",
     "@types/jest": "^29.5.3",
-    "ts-jest": "^29.1.1"
+    "@types/node": "^20.4.5",
+    "@types/uuid": "^9.0.2",
+    "jest": "^29.6.2",
+    "ts-jest": "^29.1.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.1.6"
   }
 }

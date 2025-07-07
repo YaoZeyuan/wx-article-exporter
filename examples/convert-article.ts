@@ -2,6 +2,8 @@ import { EpubGenerator } from '../src';
 import * as fs from 'fs';
 import * as path from 'path';
 
+const basePath = path.join(__dirname, '../tests');
+
 // 示例：将微信公众号文章转换为EPUB
 async function convertArticleToEpub() {
   // 创建EPUB生成器实例
@@ -59,11 +61,15 @@ async function convertArticleToEpub() {
     `;
 
     // 读取文章相关的图片
+
     const images = await Promise.all(
-      article.images.map(async (img) => ({
-        path: img.filename,
-        data: await fs.promises.readFile(img.path)
-      }))
+      article.images.map(async (img) => {
+        const imgPath = path.resolve(basePath, img.path)
+        return {
+          path: img.filename,
+          data: await fs.promises.readFile(imgPath)
+        }
+      })
     );
 
     // 添加文章内容到EPUB
@@ -71,11 +77,11 @@ async function convertArticleToEpub() {
   }
 
   // 生成EPUB文件
-  const outputPath = path.join(__dirname, 'output', 'articles.epub');
-  
+  const outputPath = path.join(basePath, 'output', 'articles.epub');
+
   // 确保输出目录存在
   await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
-  
+
   // 生成EPUB
   await generator.generate(outputPath);
   console.log(`EPUB文件已生成：${outputPath}`);
