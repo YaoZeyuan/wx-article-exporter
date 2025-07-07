@@ -5,6 +5,8 @@
 /tmp
 __tests__/**
 coverage/**
+resource
+output
 
 # Logs
 logs

@@ -7,7 +7,7 @@
     "test": "jest",
     "build": "tsc",
     "start": "node dist/index.js",
-    "debug": "npx tsx ./examples/export-wx-article.ts"
+    "debug": "npx tsx ./examples/export-wx-article-two-steps.ts"
   },
   "keywords": [
     "epub",

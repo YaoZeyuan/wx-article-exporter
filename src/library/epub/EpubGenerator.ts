@@ -46,6 +46,12 @@ export class EpubGenerator {
    * @param outputPath 输出文件路径
    */
   public async generate(outputPath: string): Promise<void> {
+    const targetDir = path.dirname(outputPath)
+    if (fs.existsSync(targetDir) === false) {
+      console.log('⚠️', targetDir, "不存在，主动创建")
+      fs.mkdirSync(targetDir)
+    }
+
     const output = fs.createWriteStream(outputPath);
     const archive = archiver('zip', { zlib: { level: 9 } });
 
@@ -78,7 +84,9 @@ export class EpubGenerator {
         }
       });
 
-      archive.append($.html(), { name: `OEBPS/${htmlFileName}` });
+      const finalContent = $.html().toString()
+
+      archive.append(finalContent, { name: `OEBPS/${htmlFileName}` });
 
       // 添加图片
       for (const image of content.images) {
