@@ -16,20 +16,42 @@ interface WxArticleInfo {
     createTime: number;
 }
 
+interface ExportProgress {
+    total: number;
+    current: number;
+    errors: Array<{
+        type: 'article' | 'image';
+        url: string;
+        error: string;
+    }>;
+}
+
 export class WxArticleExporter {
     private albumUrl: string;
     private albumInfo?: WxAlbumInfo;
     private articles: WxArticleInfo[] = [];
+    private progress: ExportProgress = {
+        total: 0,
+        current: 0,
+        errors: []
+    };
 
     constructor(albumUrl: string) {
         this.albumUrl = albumUrl;
     }
 
     /**
+     * 获取当前进度
+     */
+    public getProgress(): ExportProgress {
+        return { ...this.progress };
+    }
+
+    /**
      * 获取专辑信息
      */
     private async fetchAlbumInfo(): Promise<WxAlbumInfo> {
-        const response = await axios.get(this.albumUrl);
+        const response = await this.fetchWithRetry(this.albumUrl);
         const html = response.data;
         const $ = cheerio.load(html);
 
@@ -44,13 +66,19 @@ export class WxArticleExporter {
             throw new Error('无法获取专辑信息');
         }
 
-        // 提取cgiData对象
-        const match = scriptContent.match(/window\.cgiData\s*=\s*({[\s\S]*?});/);
+        // 提取cgiData对象，匹配到window.isPaySubscribe之前
+
+        let rawContent = scriptContent.split("window.cgiData = ")[1]
+
+
+        const match = scriptContent.match(/window\.cgiData\s*=\s*({[\s\S]*?(?:continue_flag:[^,}]+,[\s\S]*?recomm_tag_page_url:[^,}]+)\s*});\s*window\.isPaySubscribe/);
         if (!match) {
             throw new Error('无法解析专辑信息');
         }
 
-        const cgiData = JSON.parse(match[1]);
+        // 清理多余的空白字符和注释
+        const cgiDataStr = match[1].replace(/\s+/g, ' ').trim();
+        const cgiData = JSON.parse(cgiDataStr);
         return {
             title: cgiData.title,
             author: cgiData.nick_name,
@@ -75,7 +103,7 @@ export class WxArticleExporter {
         while (hasMore) {
             const url = `https://mp.weixin.qq.com/mp/appmsgalbum?action=getalbum&__biz=${biz}&album_id=${albumId}&count=10&begin_msgid=${beginMsgId}&begin_itemidx=${beginItemIdx}&f=json`;
 
-            const response = await axios.get(url);
+            const response = await this.fetchWithRetry(url, 3, 2000);
             const data = response.data;
 
             if (data.base_resp.ret !== 0) {
@@ -127,8 +155,24 @@ export class WxArticleExporter {
     /**
      * 获取文章内容
      */
+    /**
+   * 带重试机制的HTTP请求
+   */
+    private async fetchWithRetry(url: string, retries = 3, delay = 1000): Promise<any> {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await axios.get(url);
+                return response;
+            } catch (error) {
+                if (i === retries - 1) throw error;
+                console.warn(`请求失败，${retries - i - 1}次重试机会: ${error.message}`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+
     private async fetchArticleContent(url: string): Promise<{ html: string; images: Array<{ path: string; data: Buffer }> }> {
-        const response = await axios.get(url);
+        const response = await this.fetchWithRetry(url);
         const $ = cheerio.load(response.data);
         const images: Array<{ path: string; data: Buffer }> = [];
 
@@ -138,13 +182,18 @@ export class WxArticleExporter {
             if (!src) return;
 
             try {
-                const imgResponse = await axios.get(src, { responseType: 'arraybuffer' });
+                const imgResponse = await this.fetchWithRetry(src, 3, 2000);
                 const imgData = Buffer.from(imgResponse.data);
                 const imgPath = `img_${images.length + 1}${this.getImageExtension(src)}`;
                 images.push({ path: imgPath, data: imgData });
                 $(elem).attr('src', imgPath);
             } catch (error) {
                 console.warn(`下载图片失败: ${src}`, error);
+                this.progress.errors.push({
+                    type: 'image',
+                    url: src,
+                    error: error.message
+                });
             }
         }).get();
 
@@ -190,6 +239,13 @@ export class WxArticleExporter {
             date: new Date().toISOString()
         });
 
+        // 初始化进度
+        this.progress = {
+            total: this.articles.length,
+            current: 0,
+            errors: []
+        };
+
         // 处理每篇文章
         for (let i = 0; i < this.articles.length; i++) {
             const article = this.articles[i];
@@ -198,8 +254,14 @@ export class WxArticleExporter {
             try {
                 const { html, images } = await this.fetchArticleContent(article.url);
                 generator.addContent(html, images);
+                this.progress.current++;
             } catch (error) {
                 console.error(`处理文章失败: ${article.title}`, error);
+                this.progress.errors.push({
+                    type: 'article',
+                    url: article.url,
+                    error: error.message
+                });
             }
         }
 

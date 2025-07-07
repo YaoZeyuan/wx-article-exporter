@@ -8,7 +8,44 @@ async function main() {
   try {
     const exporter = new WxArticleExporter(albumUrl);
     const outputPath = path.join(__dirname, 'output', 'wx-article.epub');
+
+    // 创建进度报告定时器
+    const progressTimer = setInterval(() => {
+      const progress = exporter.getProgress();
+      if (progress.total > 0) {
+        const percentage = Math.round((progress.current / progress.total) * 100);
+        console.log(`导出进度: ${percentage}% (${progress.current}/${progress.total})`);
+        
+        if (progress.errors.length > 0) {
+          console.log('当前错误统计:');
+          const articleErrors = progress.errors.filter(e => e.type === 'article').length;
+          const imageErrors = progress.errors.filter(e => e.type === 'image').length;
+          console.log(`- 文章错误: ${articleErrors}`);
+          console.log(`- 图片错误: ${imageErrors}`);
+        }
+      }
+    }, 1000);
+
+    // 执行导出
     await exporter.exportToEpub(outputPath);
+
+    // 清理定时器
+    clearInterval(progressTimer);
+
+    // 输出最终统计
+    const finalProgress = exporter.getProgress();
+    console.log('\n导出完成!');
+    console.log(`总文章数: ${finalProgress.total}`);
+    console.log(`成功处理: ${finalProgress.current}`);
+    console.log(`失败数量: ${finalProgress.errors.length}`);
+
+    if (finalProgress.errors.length > 0) {
+      console.log('\n错误详情:');
+      finalProgress.errors.forEach((error, index) => {
+        console.log(`${index + 1}. ${error.type === 'article' ? '文章' : '图片'}: ${error.url}`);
+        console.log(`   错误: ${error.error}`);
+      });
+    }
   } catch (error) {
     console.error('导出失败:', error);
   }
