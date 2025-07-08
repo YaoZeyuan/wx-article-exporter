@@ -1,6 +1,16 @@
 # wx-article-exporter
 将微信公众号合集转为epub电子书
 
+说明： 这是一个实验性仓库。开发时间如commit记录，基于trae从12点捣鼓到3点，直接搞定。。。
+
+目前能做到导出指定合集下的文章，没有css样式，但功能已经足够了
+
+整个对话涉及的prompt在[这里](docs\prompt记录.md)
+
+临时使用方法：执行pnpm debug，可运行[export-wx-article-two-steps.ts](examples\export-wx-article-two-steps.ts)进行导出
+
+
+
 ## 特性
 
 - 支持EPUB 3.3标准
